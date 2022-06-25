@@ -24,12 +24,16 @@ import com.example.android.architecture.blueprints.todoapp.TodoDestinationsArgs
 import com.example.android.architecture.blueprints.todoapp.data.Result.Success
 import com.example.android.architecture.blueprints.todoapp.data.Task
 import com.example.android.architecture.blueprints.todoapp.data.source.TasksRepository
+import com.example.android.architecture.blueprints.todoapp.util.StateChange
+import com.example.android.architecture.blueprints.todoapp.util.produceState
+import com.example.android.architecture.blueprints.todoapp.util.pushStateChange
+import com.example.android.architecture.blueprints.todoapp.util.withViewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 /**
@@ -55,25 +59,23 @@ class AddEditTaskViewModel @Inject constructor(
 
     private val taskId: String? = savedStateHandle[TodoDestinationsArgs.TASK_ID_ARG]
 
-    // A MutableStateFlow needs to be created in this ViewModel. The source of truth of the current
-    // editable Task is the ViewModel, we need to mutate the UI state directly in methods such as
-    // `updateTitle` or `updateDescription`
-    private val _uiState = MutableStateFlow(AddEditTaskUiState())
-    val uiState: StateFlow<AddEditTaskUiState> = _uiState.asStateFlow()
+    private val eventStateChanges = MutableSharedFlow<StateChange<AddEditTaskUiState>>()
 
-    init {
-        if (taskId != null) {
-            loadTask(taskId)
-        }
-    }
+    val uiState: StateFlow<AddEditTaskUiState> = viewModelScope.produceState(
+        initial = AddEditTaskUiState(),
+        stateChangeFlows = listOf(
+            loadStateChanges(taskId),
+            eventStateChanges,
+        )
+    )
 
     // Called when clicking on fab.
-    fun saveTask() {
+    fun saveTask() = eventStateChanges.withViewModelScope {
         if (uiState.value.title.isEmpty() || uiState.value.description.isEmpty()) {
-            _uiState.update {
-                it.copy(userMessage = R.string.empty_task_message)
+            pushStateChange {
+                copy(userMessage = R.string.empty_task_message)
             }
-            return
+            return@withViewModelScope
         }
 
         if (taskId == null) {
@@ -83,72 +85,72 @@ class AddEditTaskViewModel @Inject constructor(
         }
     }
 
-    fun snackbarMessageShown() {
-        _uiState.update {
-            it.copy(userMessage = null)
+    fun snackbarMessageShown() = eventStateChanges.withViewModelScope {
+        pushStateChange {
+            copy(userMessage = null)
         }
     }
 
-    fun updateTitle(newTitle: String) {
-        _uiState.update {
-            it.copy(title = newTitle)
+    fun updateTitle(newTitle: String) = eventStateChanges.withViewModelScope {
+        pushStateChange {
+            copy(title = newTitle)
         }
     }
 
-    fun updateDescription(newDescription: String) {
-        _uiState.update {
-            it.copy(description = newDescription)
+    fun updateDescription(newDescription: String) = eventStateChanges.withViewModelScope {
+        pushStateChange {
+            copy(description = newDescription)
         }
     }
 
-    private fun createNewTask() = viewModelScope.launch {
+    private suspend fun createNewTask() {
         val newTask = Task(uiState.value.title, uiState.value.description)
         tasksRepository.saveTask(newTask)
-        _uiState.update {
-            it.copy(isTaskSaved = true)
+        eventStateChanges.pushStateChange {
+            copy(isTaskSaved = true)
         }
     }
 
-    private fun updateTask() {
+    private suspend fun updateTask() {
         if (taskId == null) {
             throw RuntimeException("updateTask() was called but task is new.")
         }
-        viewModelScope.launch {
-            val updatedTask = Task(
-                title = uiState.value.title,
-                description = uiState.value.description,
-                isCompleted = uiState.value.isTaskCompleted,
-                id = taskId
-            )
-            tasksRepository.saveTask(updatedTask)
-            _uiState.update {
-                it.copy(isTaskSaved = true)
-            }
+        val updatedTask = Task(
+            title = uiState.value.title,
+            description = uiState.value.description,
+            isCompleted = uiState.value.isTaskCompleted,
+            id = taskId
+        )
+        tasksRepository.saveTask(updatedTask)
+        eventStateChanges.pushStateChange {
+            copy(isTaskSaved = true)
         }
     }
 
-    private fun loadTask(taskId: String) {
-        _uiState.update {
-            it.copy(isLoading = true)
-        }
-        viewModelScope.launch {
+    private fun loadStateChanges(taskId: String?): Flow<StateChange<AddEditTaskUiState>> =
+        if (taskId == null) emptyFlow()
+        else flow {
+            emit(
+                StateChange {
+                    copy(isLoading = true)
+                }
+            )
             tasksRepository.getTask(taskId).let { result ->
-                if (result is Success) {
-                    val task = result.data
-                    _uiState.update {
-                        it.copy(
+                if (result is Success) emit(
+                    StateChange {
+                        val task = result.data
+                        copy(
                             title = task.title,
                             description = task.description,
                             isTaskCompleted = task.isCompleted,
                             isLoading = false
                         )
                     }
-                } else {
-                    _uiState.update {
-                        it.copy(isLoading = false)
+                ) else emit(
+                    StateChange {
+                        copy(isLoading = false)
                     }
-                }
+                )
             }
         }
-    }
 }
