@@ -64,6 +64,7 @@ class TodoNavigationActions(private val navController: NavHostController) {
         val navigatesFromDrawer = userMessage == 0
         navController.navigate(
             TASKS_SCREEN.let {
+                // 给列表页面添加参数
                 if (userMessage != 0) "$it?$USER_MESSAGE_ARG=$userMessage" else it
             }
         ) {

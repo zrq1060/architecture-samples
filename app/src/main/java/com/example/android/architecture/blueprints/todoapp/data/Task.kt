@@ -37,6 +37,7 @@ data class Task @JvmOverloads constructor(
     @PrimaryKey @ColumnInfo(name = "entryid") var id: String = UUID.randomUUID().toString()
 ) {
 
+    // 列表展示用
     val titleForList: String
         get() = if (title.isNotEmpty()) title else description
 

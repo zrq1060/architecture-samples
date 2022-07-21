@@ -77,6 +77,7 @@ fun TasksScreen(
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = {
+            // AppBar
             TasksTopAppBar(
                 openDrawer = openDrawer,
                 onFilterAllTasks = { viewModel.setFiltering(ALL_TASKS) },
@@ -87,6 +88,7 @@ fun TasksScreen(
             )
         },
         modifier = modifier.fillMaxSize(),
+        // floatingActionButton
         floatingActionButton = {
             FloatingActionButton(onClick = onAddTask) {
                 Icon(Icons.Filled.Add, stringResource(id = R.string.add_task))
@@ -94,7 +96,7 @@ fun TasksScreen(
         }
     ) { paddingValues ->
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
+        // 列表内容
         TasksContent(
             loading = uiState.isLoading,
             tasks = uiState.items,
@@ -111,6 +113,7 @@ fun TasksScreen(
         uiState.userMessage?.let { message ->
             val snackbarText = stringResource(message)
             LaunchedEffect(scaffoldState, viewModel, message, snackbarText) {
+                // 展示Snackbar
                 scaffoldState.snackbarHostState.showSnackbar(snackbarText)
                 viewModel.snackbarMessageShown()
             }
@@ -118,8 +121,10 @@ fun TasksScreen(
 
         // Check if there's a userMessage to show to the user
         val currentOnUserMessageDisplayed by rememberUpdatedState(onUserMessageDisplayed)
+        // userMessage导航传入
         LaunchedEffect(userMessage) {
             if (userMessage != 0) {
+                // 展示编辑结果消息提示，增加或编辑，都会在列表页面展示结果。
                 viewModel.showEditResultMessage(userMessage)
                 currentOnUserMessageDisplayed()
             }

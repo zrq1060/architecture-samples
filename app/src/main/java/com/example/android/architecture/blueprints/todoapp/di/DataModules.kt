@@ -33,6 +33,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
+// 限定符-远程数据源
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
 annotation class RemoteTasksDataSource
@@ -41,10 +42,12 @@ annotation class RemoteTasksDataSource
 @Retention(AnnotationRetention.RUNTIME)
 annotation class LocalTasksDataSource
 
+// RepositoryModule-单例
 @Module
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
 
+    // 提供TasksRepository
     @Singleton
     @Provides
     fun provideTasksRepository(
@@ -56,15 +59,18 @@ object RepositoryModule {
     }
 }
 
+// DataSourceModule-单例
 @Module
 @InstallIn(SingletonComponent::class)
 object DataSourceModule {
 
+    // 提供远程DataSource
     @Singleton
     @RemoteTasksDataSource
     @Provides
     fun provideTasksRemoteDataSource(): TasksDataSource = TasksRemoteDataSource
 
+    // 提供本地DataSource
     @Singleton
     @LocalTasksDataSource
     @Provides
@@ -76,10 +82,12 @@ object DataSourceModule {
     }
 }
 
+// DatabaseModule-单例
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
 
+    // 提供数据库
     @Singleton
     @Provides
     fun provideDataBase(@ApplicationContext context: Context): ToDoDatabase {

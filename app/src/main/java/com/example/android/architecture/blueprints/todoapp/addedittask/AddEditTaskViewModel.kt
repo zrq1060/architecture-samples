@@ -53,6 +53,7 @@ class AddEditTaskViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
+    // 任务Id，可能是编辑
     private val taskId: String? = savedStateHandle[TodoDestinationsArgs.TASK_ID_ARG]
 
     // A MutableStateFlow needs to be created in this ViewModel. The source of truth of the current
@@ -63,13 +64,16 @@ class AddEditTaskViewModel @Inject constructor(
 
     init {
         if (taskId != null) {
+            // 是编辑，加载Task，进行展示。
             loadTask(taskId)
         }
     }
 
     // Called when clicking on fab.
+    // 保存操作
     fun saveTask() {
         if (uiState.value.title.isEmpty() || uiState.value.description.isEmpty()) {
+            // 有一个为空，提示Snackbar。
             _uiState.update {
                 it.copy(userMessage = R.string.empty_task_message)
             }
@@ -77,38 +81,47 @@ class AddEditTaskViewModel @Inject constructor(
         }
 
         if (taskId == null) {
+            // 创建操作
             createNewTask()
         } else {
+            // 更新操作
             updateTask()
         }
     }
 
+    // 清空SnackBar
     fun snackbarMessageShown() {
         _uiState.update {
             it.copy(userMessage = null)
         }
     }
 
+    // 更新标题
     fun updateTitle(newTitle: String) {
         _uiState.update {
             it.copy(title = newTitle)
         }
     }
 
+    // 更新描述
     fun updateDescription(newDescription: String) {
         _uiState.update {
             it.copy(description = newDescription)
         }
     }
 
+    // 创建新的Task
     private fun createNewTask() = viewModelScope.launch {
         val newTask = Task(uiState.value.title, uiState.value.description)
+        // 进行保存
         tasksRepository.saveTask(newTask)
+        // 更新UI
         _uiState.update {
             it.copy(isTaskSaved = true)
         }
     }
 
+    // 更新Task
     private fun updateTask() {
         if (taskId == null) {
             throw RuntimeException("updateTask() was called but task is new.")
@@ -120,7 +133,9 @@ class AddEditTaskViewModel @Inject constructor(
                 isCompleted = uiState.value.isTaskCompleted,
                 id = taskId
             )
+            // 进行保存
             tasksRepository.saveTask(updatedTask)
+            // 更新UI
             _uiState.update {
                 it.copy(isTaskSaved = true)
             }
@@ -128,12 +143,14 @@ class AddEditTaskViewModel @Inject constructor(
     }
 
     private fun loadTask(taskId: String) {
+        // 先显示为加载中
         _uiState.update {
             it.copy(isLoading = true)
         }
         viewModelScope.launch {
             tasksRepository.getTask(taskId).let { result ->
                 if (result is Success) {
+                    // 成功，更新uiState进行展示。
                     val task = result.data
                     _uiState.update {
                         it.copy(
@@ -144,6 +161,7 @@ class AddEditTaskViewModel @Inject constructor(
                         )
                     }
                 } else {
+                    // 失败，更新uiState进行展示。
                     _uiState.update {
                         it.copy(isLoading = false)
                     }

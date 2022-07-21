@@ -51,9 +51,16 @@ class StatisticsViewModel @Inject constructor(
 ) : ViewModel() {
 
     val uiState: StateFlow<StatisticsUiState> =
+        // 所有Task的流
+        // 流程：
+        // 1.先走onStart，然后发送了一个Async.Loading状态。
+        // 2.后走第二个map，里面的值为Async.Loading状态，生产一个StatisticsUiState进行UI展示。
+        // 3.后走第一个map，将获取到的Task结果为成功。
+        // 4.最后走第二个map，将此结果生产一个StatisticsUiState进行UI展示。
         tasksRepository.getTasksStream()
             .map { Async.Success(it) }
             .onStart<Async<Result<List<Task>>>> { emit(Async.Loading) }
+            // 下面map，生产StatisticsUiState
             .map { taskAsync -> produceStatisticsUiState(taskAsync) }
             .stateIn(
                 scope = viewModelScope,
@@ -70,11 +77,14 @@ class StatisticsViewModel @Inject constructor(
     private fun produceStatisticsUiState(taskLoad: Async<Result<List<Task>>>) =
         when (taskLoad) {
             Async.Loading -> {
+                // 异步加载中，显示空布局。
                 StatisticsUiState(isLoading = true, isEmpty = true)
             }
             is Async.Success -> {
+                // 异步成功，显示成功布局。
                 when (val result = taskLoad.data) {
                     is Success -> {
+                        // 数据成功，显示成功布局。
                         val stats = getActiveAndCompletedStats(result.data)
                         StatisticsUiState(
                             isEmpty = result.data.isEmpty(),

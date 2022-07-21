@@ -61,26 +61,40 @@ class TasksViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
+    // 过滤类型，3选1
     private val _savedFilterType =
         savedStateHandle.getStateFlow(TASKS_FILTER_SAVED_STATE_KEY, ALL_TASKS)
 
+    // 根据过滤类型，获取对应的过滤UI展示信息，并只在有新对象时通知。
     private val _filterUiInfo = _savedFilterType.map { getFilterUiInfo(it) }.distinctUntilChanged()
+
+    // 提示消息
     private val _userMessage: MutableStateFlow<Int?> = MutableStateFlow(null)
+
+    // 是否加载中
     private val _isLoading = MutableStateFlow(false)
+
+    // 过滤Task，Tasks流、过滤类型更改，则触发过滤。
     private val _filteredTasksAsync =
         combine(tasksRepository.getTasksStream(), _savedFilterType) { tasks, type ->
+            // 根据类型进行过滤
             filterTasks(tasks, type)
         }
+            // 不管列表是否有数据，都为成功。
             .map { Async.Success(it) }
+            // 开始时，为Loading状态。
             .onStart<Async<List<Task>>> { emit(Async.Loading) }
 
+    // uiState，与UI相关的一个更改，则触发更改。
     val uiState: StateFlow<TasksUiState> = combine(
         _filterUiInfo, _isLoading, _userMessage, _filteredTasksAsync
     ) { filterUiInfo, isLoading, userMessage, tasksAsync ->
         when (tasksAsync) {
+            // 加载中显示
             Async.Loading -> {
                 TasksUiState(isLoading = true)
             }
+            // 加载成功显示
             is Async.Success -> {
                 TasksUiState(
                     items = tasksAsync.data,
@@ -91,27 +105,39 @@ class TasksViewModel @Inject constructor(
             }
         }
     }
+        // 将其转为StateFlow，
         .stateIn(
             scope = viewModelScope,
+            // 被订阅的时候开始
             started = WhileUiSubscribed,
+            // 初始化为加载中
             initialValue = TasksUiState(isLoading = true)
         )
 
+    // 设置过滤类型
     fun setFiltering(requestType: TasksFilterType) {
         savedStateHandle[TASKS_FILTER_SAVED_STATE_KEY] = requestType
     }
 
+    // 清除已经完成的
     fun clearCompletedTasks() {
         viewModelScope.launch {
+            // 清除数据源
             tasksRepository.clearCompletedTasks()
+            // 展示提示
             showSnackbarMessage(R.string.completed_tasks_cleared)
+            // 重新刷新
             refresh()
         }
     }
 
+    // 标记单个Task是已完成状态，还是激活状态。
     fun completeTask(task: Task, completed: Boolean) = viewModelScope.launch {
         if (completed) {
+            // 标记为完成的
+            // -修改数据源
             tasksRepository.completeTask(task)
+            // -提示
             showSnackbarMessage(R.string.task_marked_complete)
         } else {
             tasksRepository.activateTask(task)
@@ -119,6 +145,7 @@ class TasksViewModel @Inject constructor(
         }
     }
 
+    // 展示增加、编辑、删除后的结果提示。
     fun showEditResultMessage(result: Int) {
         when (result) {
             EDIT_RESULT_OK -> showSnackbarMessage(R.string.successfully_saved_task_message)
@@ -127,6 +154,7 @@ class TasksViewModel @Inject constructor(
         }
     }
 
+    // Snackbar已经展示，清除数据。
     fun snackbarMessageShown() {
         _userMessage.value = null
     }
@@ -136,9 +164,12 @@ class TasksViewModel @Inject constructor(
     }
 
     fun refresh() {
+        // 展示加载中
         _isLoading.value = true
         viewModelScope.launch {
+            // 刷新数据源
             tasksRepository.refreshTasks()
+            // 隐藏加载中
             _isLoading.value = false
         }
     }
@@ -147,8 +178,10 @@ class TasksViewModel @Inject constructor(
         tasksResult: Result<List<Task>>,
         filteringType: TasksFilterType
     ): List<Task> = if (tasksResult is Success) {
+        // 获取Tasks成功，根据类型进行过滤。
         filterItems(tasksResult.data, filteringType)
     } else {
+        // 获取Tasks失败，展示Snackbar提示，空列表。
         showSnackbarMessage(R.string.loading_tasks_error)
         emptyList()
     }

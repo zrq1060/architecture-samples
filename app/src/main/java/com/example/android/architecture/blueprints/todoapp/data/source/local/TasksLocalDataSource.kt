@@ -35,6 +35,7 @@ class TasksLocalDataSource internal constructor(
 ) : TasksDataSource {
 
     override fun getTasksStream(): Flow<Result<List<Task>>> {
+        // 使用room，获取flow，然后转为成功。
         return tasksDao.observeTasks().map {
             Success(it)
         }

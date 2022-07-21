@@ -55,11 +55,14 @@ class TaskDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
+    // 使用savedStateHandle，是因为要记录。
     val taskId: String = savedStateHandle[TodoDestinationsArgs.TASK_ID_ARG]!!
 
     private val _userMessage: MutableStateFlow<Int?> = MutableStateFlow(null)
     private val _isLoading = MutableStateFlow(false)
+    // 是否已经删除
     private val _isTaskDeleted = MutableStateFlow(false)
+    // 异步获取指定taskId的Task
     private val _taskAsync = tasksRepository.getTaskStream(taskId)
         .map { handleResult(it) }
         .onStart { emit(Async.Loading) }
@@ -69,9 +72,11 @@ class TaskDetailViewModel @Inject constructor(
     ) { userMessage, isLoading, isTaskDeleted, taskAsync ->
         when (taskAsync) {
             Async.Loading -> {
+                // 加载中的UI状态
                 TaskDetailUiState(isLoading = true)
             }
             is Async.Success -> {
+                // 成功的UI状态
                 TaskDetailUiState(
                     task = taskAsync.data,
                     isLoading = isLoading,
@@ -87,11 +92,13 @@ class TaskDetailViewModel @Inject constructor(
             initialValue = TaskDetailUiState(isLoading = true)
         )
 
+    // 删除Task
     fun deleteTask() = viewModelScope.launch {
         tasksRepository.deleteTask(taskId)
         _isTaskDeleted.value = true
     }
 
+    // 设置完成的
     fun setCompleted(completed: Boolean) = viewModelScope.launch {
         val task = uiState.value.task ?: return@launch
         if (completed) {
@@ -121,8 +128,10 @@ class TaskDetailViewModel @Inject constructor(
 
     private fun handleResult(tasksResult: Result<Task>): Async<Task?> =
         if (tasksResult is Success) {
+            // 成功
             Async.Success(tasksResult.data)
         } else {
+            // 失败，展示提示
             showSnackbarMessage(R.string.loading_tasks_error)
             Async.Success(null)
         }

@@ -24,14 +24,17 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import javax.inject.Qualifier
 
+// 限定符-IO
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
 annotation class IoDispatcher
 
+// CoroutinesModule-单例
 @Module
 @InstallIn(SingletonComponent::class)
 object CoroutinesModule {
 
+    // 提供CoroutineDispatcher
     @Provides
     @IoDispatcher
     fun providesIODispatcher(): CoroutineDispatcher = Dispatchers.IO

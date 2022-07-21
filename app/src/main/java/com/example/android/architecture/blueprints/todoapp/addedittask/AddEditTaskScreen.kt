@@ -64,6 +64,7 @@ fun AddEditTaskScreen(
         modifier = modifier.fillMaxSize(),
         scaffoldState = scaffoldState,
         topBar = { AddEditTaskTopAppBar(topBarTitle, onBack) },
+        // 保存按钮
         floatingActionButton = {
             FloatingActionButton(onClick = viewModel::saveTask) {
                 Icon(Icons.Filled.Done, stringResource(id = R.string.cd_save_task))
@@ -84,10 +85,12 @@ fun AddEditTaskScreen(
         // Check if the task is saved and call onTaskUpdate event
         LaunchedEffect(uiState.isTaskSaved) {
             if (uiState.isTaskSaved) {
+                // 已经保存，通知。
                 onTaskUpdate()
             }
         }
 
+        // 展示Snackbar
         // Check for user messages to display on the screen
         uiState.userMessage?.let { userMessage ->
             val snackbarText = stringResource(userMessage)

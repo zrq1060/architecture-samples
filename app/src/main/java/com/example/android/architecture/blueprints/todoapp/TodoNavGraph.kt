@@ -62,12 +62,14 @@ fun TodoNavGraph(
         startDestination = startDestination,
         modifier = modifier
     ) {
+        // 列表页
         composable(
             TodoDestinations.TASKS_ROUTE,
             arguments = listOf(
                 navArgument(USER_MESSAGE_ARG) { type = NavType.IntType; defaultValue = 0 }
             )
         ) { entry ->
+            // 列表页，有Drawer。
             AppModalDrawer(drawerState, currentRoute, navActions) {
                 TasksScreen(
                     userMessage = entry.arguments?.getInt(USER_MESSAGE_ARG)!!,
@@ -78,11 +80,14 @@ fun TodoNavGraph(
                 )
             }
         }
+        // 统计页
         composable(TodoDestinations.STATISTICS_ROUTE) {
+            // 统计页，有Drawer。
             AppModalDrawer(drawerState, currentRoute, navActions) {
                 StatisticsScreen(openDrawer = { coroutineScope.launch { drawerState.open() } })
             }
         }
+        // 增加或编辑页
         composable(
             TodoDestinations.ADD_EDIT_TASK_ROUTE,
             arguments = listOf(
@@ -91,6 +96,7 @@ fun TodoNavGraph(
             )
         ) { entry ->
             val taskId = entry.arguments?.getString(TASK_ID_ARG)
+            // 增加或编辑页
             AddEditTaskScreen(
                 topBarTitle = entry.arguments?.getInt(TITLE_ARG)!!,
                 onTaskUpdate = {
@@ -101,12 +107,14 @@ fun TodoNavGraph(
                 onBack = { navController.popBackStack() }
             )
         }
+        // 详情页
         composable(TodoDestinations.TASK_DETAIL_ROUTE) {
             TaskDetailScreen(
                 onEditTask = { taskId ->
                     navActions.navigateToAddEditTask(R.string.edit_task, taskId)
                 },
                 onBack = { navController.popBackStack() },
+                // 删除后，导航到列表页面。
                 onDeleteTask = { navActions.navigateToTasks(DELETE_RESULT_OK) }
             )
         }

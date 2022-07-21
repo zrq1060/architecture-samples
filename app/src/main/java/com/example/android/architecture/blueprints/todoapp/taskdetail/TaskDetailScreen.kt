@@ -63,6 +63,7 @@ fun TaskDetailScreen(
         topBar = {
             TaskDetailTopAppBar(onBack = onBack, onDelete = viewModel::deleteTask)
         },
+        // 编辑float按钮
         floatingActionButton = {
             FloatingActionButton(onClick = { onEditTask(viewModel.taskId) }) {
                 Icon(Icons.Filled.Edit, stringResource(id = R.string.edit_task))
@@ -81,6 +82,7 @@ fun TaskDetailScreen(
         )
 
         // Check for user messages to display on the screen
+        // 消息提示
         uiState.userMessage?.let { userMessage ->
             val snackbarText = stringResource(userMessage)
             LaunchedEffect(scaffoldState, viewModel, userMessage, snackbarText) {
@@ -90,8 +92,10 @@ fun TaskDetailScreen(
         }
 
         // Check if the task is deleted and call onDeleteTask
+        // Task已经删除
         LaunchedEffect(uiState.isTaskDeleted) {
             if (uiState.isTaskDeleted) {
+                // Task已经删除，通知。
                 onDeleteTask()
             }
         }
