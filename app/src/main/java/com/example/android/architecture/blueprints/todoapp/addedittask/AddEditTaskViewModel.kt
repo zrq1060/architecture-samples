@@ -53,12 +53,14 @@ class AddEditTaskViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    // 任务Id，可能是编辑
+    // 任务Id，有此Id是编辑Task，无是新增Task。
     private val taskId: String? = savedStateHandle[TodoDestinationsArgs.TASK_ID_ARG]
 
     // A MutableStateFlow needs to be created in this ViewModel. The source of truth of the current
     // editable Task is the ViewModel, we need to mutate the UI state directly in methods such as
     // `updateTitle` or `updateDescription`
+    // 需要在此ViewModel中创建MutableStateFlow。
+    // 当前可编辑任务的真实来源是ViewModel，我们需要在诸如“updateTitle”或“updateDescription”之类的方法中直接改变UI状态`
     private val _uiState = MutableStateFlow(AddEditTaskUiState())
     val uiState: StateFlow<AddEditTaskUiState> = _uiState.asStateFlow()
 

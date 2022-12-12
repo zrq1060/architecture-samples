@@ -58,11 +58,13 @@ class TaskDetailViewModel @Inject constructor(
     // 使用savedStateHandle，是因为要记录。
     val taskId: String = savedStateHandle[TodoDestinationsArgs.TASK_ID_ARG]!!
 
+    // 提示消息（UI用）
     private val _userMessage: MutableStateFlow<Int?> = MutableStateFlow(null)
+    // 是否加载中（UI用）
     private val _isLoading = MutableStateFlow(false)
-    // 是否已经删除
+    // 是否已经删除（UI用）
     private val _isTaskDeleted = MutableStateFlow(false)
-    // 异步获取指定taskId的Task
+    // 异步获指定taskId的Task详情（UI用）
     private val _taskAsync = tasksRepository.getTaskStream(taskId)
         .map { handleResult(it) }
         .onStart { emit(Async.Loading) }
@@ -88,6 +90,7 @@ class TaskDetailViewModel @Inject constructor(
     }
         .stateIn(
             scope = viewModelScope,
+            // 被订阅的时候开始
             started = WhileUiSubscribed,
             initialValue = TaskDetailUiState(isLoading = true)
         )

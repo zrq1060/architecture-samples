@@ -65,16 +65,16 @@ class TasksViewModel @Inject constructor(
     private val _savedFilterType =
         savedStateHandle.getStateFlow(TASKS_FILTER_SAVED_STATE_KEY, ALL_TASKS)
 
-    // 根据过滤类型，获取对应的过滤UI展示信息，并只在有新对象时通知。
+    // 根据过滤类型，获取对应的过滤UI展示信息，并只在有新对象时通知。（UI用）
     private val _filterUiInfo = _savedFilterType.map { getFilterUiInfo(it) }.distinctUntilChanged()
 
-    // 提示消息
+    // 提示消息（UI用）
     private val _userMessage: MutableStateFlow<Int?> = MutableStateFlow(null)
 
-    // 是否加载中
+    // 是否加载中（UI用）
     private val _isLoading = MutableStateFlow(false)
 
-    // 过滤Task，Tasks流、过滤类型更改，则触发过滤。
+    // 过滤后的Task列表（UI用），Tasks流更改、过滤类型更改，则触发过滤。
     private val _filteredTasksAsync =
         combine(tasksRepository.getTasksStream(), _savedFilterType) { tasks, type ->
             // 根据类型进行过滤

@@ -34,6 +34,7 @@ class DefaultTasksRepository(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : TasksRepository {
 
+    // 获取所有Task，强制更新则同步网络，维护本地源，使用本地源。
     override suspend fun getTasks(forceUpdate: Boolean): Result<List<Task>> {
         if (forceUpdate) {
             try {

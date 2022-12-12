@@ -54,7 +54,7 @@ class StatisticsViewModel @Inject constructor(
         // 所有Task的流
         // 流程：
         // 1.先走onStart，然后发送了一个Async.Loading状态。
-        // 2.后走第二个map，里面的值为Async.Loading状态，生产一个StatisticsUiState进行UI展示。
+        // 2.后走第二个map（因为获取所有Task是需要时间的，所以第一个map先没走），里面的值为Async.Loading状态，生产一个StatisticsUiState进行UI展示。
         // 3.后走第一个map，将获取到的Task结果为成功。
         // 4.最后走第二个map，将此结果生产一个StatisticsUiState进行UI展示。
         tasksRepository.getTasksStream()

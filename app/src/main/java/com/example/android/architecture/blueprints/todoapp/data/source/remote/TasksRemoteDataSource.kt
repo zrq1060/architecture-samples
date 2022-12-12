@@ -41,6 +41,7 @@ object TasksRemoteDataSource : TasksDataSource {
         addTask("Finish bridge in Tacoma", "Found awesome girders at half the cost!")
     }
 
+    // MutableStateFlow<Result<List<Task>>>
     private val observableTasks = MutableStateFlow(runBlocking { getTasks() })
 
     override suspend fun refreshTasks() {
