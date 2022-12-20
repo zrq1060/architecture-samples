@@ -70,6 +70,7 @@ class DefaultTasksRepository(
         if (remoteTasks is Success) {
             // 成功，同步本地（先删后增）。
             // Real apps might want to do a proper sync, deleting, modifying or adding each task.
+            // 真正的应用程序可能需要适当地同步、删除、修改或添加每个任务。
             tasksLocalDataSource.deleteAllTasks()
             remoteTasks.data.forEach { task ->
                 tasksLocalDataSource.saveTask(task)
@@ -181,6 +182,14 @@ class DefaultTasksRepository(
         return tasksLocalDataSource.getTask(id)
     }
     // 总结：
-    // 查询，使用本地数据源。
-    // 增、删、改、刷新，维护远端源、本地源。
+    // 增加，增加网络，增加本地，要保证同步，需要coroutineScope。
+    //      现实中，网络成功后再增加到本地，但是本地可能会失败，都成功为成功，其它情况为失败，不需要coroutineScope。
+    // 删除，删除网络，删除本地，要保证同步，需要coroutineScope。
+    // 更改，更改网络，更改本地，要保证同步，需要coroutineScope。
+    // 查询，查询本地，不需要coroutineScope。
+
+    // 从远端更新，查询网络，更新本地，不要保证同步，不需要coroutineScope。
+
+    // 增、删、改，维护远端源、本地源。
+    // 查，只使用本地源。
 }
