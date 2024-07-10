@@ -51,12 +51,13 @@ class StatisticsViewModel @Inject constructor(
 ) : ViewModel() {
 
     val uiState: StateFlow<StatisticsUiState> =
-        // 所有Task的流
-        // 流程：
+        // 获取所有Task的流
+        // 下面思想：可以把第一个map和onStart看作一个整体，他们前面产出值，后面的第二个map转换值，所以整体流程如下。
+        // 下面流程：
         // 1.先走onStart，然后发送了一个Async.Loading状态。
-        // 2.后走第二个map（因为获取所有Task是需要时间的，所以第一个map先没走），里面的值为Async.Loading状态，生产一个StatisticsUiState进行UI展示。
-        // 3.后走第一个map，将获取到的Task结果为成功。
-        // 4.最后走第二个map，将此结果生产一个StatisticsUiState进行UI展示。
+        // 2.后走第二个map（因为上面整体已经发出，就会走此map进行转换），里面的值为Async.Loading状态，将其转换为StatisticsUiState的加载中状态进行UI展示。
+        // 3.后走第一个map（因为结果已经获取成功），然后转换了一个Async.Success状态。
+        // 4.最后走第二个map，里面的值为Async.Success状态，将其转换为StatisticsUiState的成功状态进行UI展示。
         tasksRepository.getTasksStream()
             .map { Async.Success(it) }
             .onStart<Async<Result<List<Task>>>> { emit(Async.Loading) }
